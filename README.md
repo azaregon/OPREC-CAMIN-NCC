@@ -47,7 +47,7 @@ services:
     # image: python:3.13.3-slim
     build: ./FE
     ports:
-      - "10000:5000"
+      - "80:5000"
 
   backend:
     # image: python:3.13.3-slim
@@ -55,4 +55,24 @@ services:
     ports:
       - "10001:5000"
 ```
-dengan compose.yml ini kita bisa mengarahkan docker untuk nge-build setiap direktori kita dan 
+dengan compose.yml ini kita bisa mengarahkan docker untuk nge-build setiap direktori kita dan melakukan exposing port, untuk backendkita arahkan port 80 host ke port 5000 container juga backend dari 10001 ke 5000.
+
+
+
+## Deployment ke VPS
+Untuk melakukan deployment ke VPS, kita akan menggunakan azure student. kita konfigurasikan azure dengan konfigurasi termurah dengan menerapkan discount nya azzure yang membuat harga menjadi sekitar $0.02 per jamnya. Kita juga expose port-port yang diperlukan dengan list:
+- 22 ssh
+- 80 HTTP (FE)
+- 443 HTTPS
+- 10001 HTTP (BE)
+setelah itu, jangan lupa kita untuk konfigurasi username and password VPS untuk login ssh nantinya.
+
+setelah semua starting server selesai, jalankan VPS menggunakan tombolnya
+lalu bisa kita sambungkan ssh kita melalui terminal ke VPS dengan `ssh user@password`
+
+copy semua file dari lokal ke VPS menggunakan FileZilla atau sftp cllient lainnya
+setelah itu, konfigurasikan docker agar bisa jalan.
+
+pergi ke folder tempat kita copy semua. 
+gunakan docker compose up --build untuk build dan run service kita.
+
