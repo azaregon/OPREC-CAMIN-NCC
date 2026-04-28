@@ -2,6 +2,7 @@ pipeline {
     agent any // Or 'agent { label "docker" }' if you have specific agents
 
     environment {
+        DOCKER_HOST = 'unix:///var/run/docker.sock'
         SONARQUBE_ENV = 'sonarserver'
         PROJECT_KEY   = 'go-project'
         PROJECT_NAME  = 'go-project'
