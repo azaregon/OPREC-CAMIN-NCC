@@ -1,9 +1,9 @@
 pipeline {
     agent any
 
-    environment {
-        // Change this to your SonarQube server name in Jenkins
-        SONARQUBE_ENV = 'sonqube'
+    tools {
+        // MUST match exactly what you named in Jenkins
+        sonarScanner 'sonqube'
     }
 
     stages {
@@ -12,7 +12,6 @@ pipeline {
             steps {
                 echo '=== STAGE: CHECKOUT ==='
                 checkout scm
-                echo 'Repository checked out successfully'
             }
         }
 
@@ -21,21 +20,20 @@ pipeline {
                 echo '=== STAGE: PREPARATION ==='
                 sh 'pwd'
                 sh 'ls -la'
-                echo 'Preparation done'
             }
         }
 
         stage('Build (Mock)') {
             steps {
                 echo '=== STAGE: BUILD ==='
-                echo 'Skipping actual build (debug mode)'
+                echo 'Skipping build...'
             }
         }
 
         stage('Test (Mock)') {
             steps {
                 echo '=== STAGE: TEST ==='
-                echo 'Skipping tests (debug mode)'
+                echo 'Skipping test...'
             }
         }
 
@@ -43,18 +41,18 @@ pipeline {
             steps {
                 echo '=== STAGE: SONARQUBE ANALYSIS ==='
 
-                withSonarQubeEnv("${SONARQUBE_ENV}") {
+                withSonarQubeEnv('sonqube') {
                     sh '''
-                        echo "Running SonarQube scanner..."
+                        echo "Using scanner:"
+                        which sonar-scanner
+
+                        echo "Starting scan..."
                         sonar-scanner \
                           -Dsonar.projectKey=debug-project \
                           -Dsonar.sources=. \
-                          -Dsonar.host.url=$SONAR_HOST_URL \
-                          -Dsonar.login=$SONAR_AUTH_TOKEN
+                          -X
                     '''
                 }
-
-                echo 'SonarQube analysis triggered'
             }
         }
 
@@ -65,8 +63,6 @@ pipeline {
                 timeout(time: 2, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: false
                 }
-
-                echo 'Quality Gate check completed'
             }
         }
     }
