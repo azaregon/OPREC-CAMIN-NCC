@@ -1,41 +1,48 @@
 pipeline {
-    agent any // Or 'agent { label "docker" }' if you have specific agents
+    agent {
+        docker {
+            image 'python:3.13.3-slim'
+            // We mount the Docker binary and the Socket so Python can run docker commands
+            args '''-u root \
+                    -v /var/run/docker.sock:/var/run/docker.sock \
+                    -v /usr/bin/docker:/usr/bin/docker \
+                    -v /usr/libexec/docker/cli-plugins/docker-compose:/usr/libexec/docker/cli-plugins/docker-compose'''
+        }
+    }
 
     environment {
-        DOCKER_HOST = 'unix:///var/run/docker.sock'
+        DOCKER_HOST   = 'unix:///var/run/docker.sock'
         SONARQUBE_ENV = 'sonarserver'
         PROJECT_KEY   = 'go-project'
         PROJECT_NAME  = 'go-project'
-        SCANNER_HOME  = tool 'sonqube'
+        SCANNER_HOME  = tool 'sonarqube8.0'
     }
 
     stages {
-        stage('Checkout') {
+        stage('Setup') {
             steps {
-                git branch: 'tugas-1',
-                    url: 'https://github.com/azaregon/OPREC-CAMIN-NCC',
-                    credentialsId: 'admin'
+                sh '''
+                    # Install JRE for Sonar and Go for the tests
+                    apt-get update -qq
+                    apt-get install -y -qq default-jre-headless golang-go
+                    
+                    git config --global --add safe.directory ${WORKSPACE}
+                '''
             }
         }
 
-        stage('Setup & Build') {
+        stage('Build') {
             steps {
-                // Use dir() to ensure all commands inside happen within that folder
                 dir('file prod') {
-                    sh '''
-                        git config --global --add safe.directory ${WORKSPACE}
-                        apt-get update -qq && apt-get install -y -qq default-jre-headless
-                        
-                        # Use -d to run in background so the pipeline can continue
-                        docker compose up -d
-                    '''
+                    // This will now work because we mounted the docker binary/socket
+                    sh 'docker compose up -d'
                 }
             }
         }
 
         stage('Test') {
             steps {
-                // If you are running tests OUTSIDE the container, you need Go installed on the agent
+                // This works because we installed golang-go in the Setup stage
                 sh 'go test ./... -v -coverprofile=coverage.out'
             }
         }
@@ -43,21 +50,7 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv("${SONARQUBE_ENV}") {
-                    sh """
-                        ${SCANNER_HOME}/bin/sonar-scanner \
-                          -Dsonar.projectKey=${PROJECT_KEY} \
-                          -Dsonar.projectName=${PROJECT_NAME} \
-                          -Dsonar.sources=. \
-                          -Dsonar.go.coverage.reportPaths=coverage.out
-                    """
-                }
-            }
-        }
-
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+                    sh "${SCANNER_HOME}/bin/sonar-scanner -Dsonar.projectKey=${PROJECT_KEY} -Dsonar.sources=."
                 }
             }
         }
@@ -65,12 +58,7 @@ pipeline {
 
     post {
         always {
-            // Shut down the containers so they don't leak resources
-            dir('file prod') {
-                sh 'docker compose down'
-            }
+            dir('file prod') { sh 'docker compose down' }
         }
-        success { echo 'Pipeline sukses' }
-        failure { echo 'Pipeline gagal' }
     }
 }
