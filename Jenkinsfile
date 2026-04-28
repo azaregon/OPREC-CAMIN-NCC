@@ -5,7 +5,7 @@ pipeline {
         SONARQUBE_ENV = 'sonarserver'
         PROJECT_KEY   = 'go-project'
         PROJECT_NAME  = 'go-project'
-        SCANNER_HOME  = tool 'sonarqube8.0'
+        SCANNER_HOME  = tool 'sonqube'
     }
 
     stages {
