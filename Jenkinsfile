@@ -1,8 +1,9 @@
 pipeline {
     agent any
 
-    tools {
-        sonarRunner 'sonqube'
+    environment {
+        // Change this to your SonarQube server name in Jenkins
+        SONARQUBE_ENV = 'SonarQube'
     }
 
     stages {
@@ -11,6 +12,7 @@ pipeline {
             steps {
                 echo '=== STAGE: CHECKOUT ==='
                 checkout scm
+                echo 'Repository checked out successfully'
             }
         }
 
@@ -19,6 +21,21 @@ pipeline {
                 echo '=== STAGE: PREPARATION ==='
                 sh 'pwd'
                 sh 'ls -la'
+                echo 'Preparation done'
+            }
+        }
+
+        stage('Build (Mock)') {
+            steps {
+                echo '=== STAGE: BUILD ==='
+                echo 'Skipping actual build (debug mode)'
+            }
+        }
+
+        stage('Test (Mock)') {
+            steps {
+                echo '=== STAGE: TEST ==='
+                echo 'Skipping tests (debug mode)'
             }
         }
 
@@ -26,17 +43,18 @@ pipeline {
             steps {
                 echo '=== STAGE: SONARQUBE ANALYSIS ==='
 
-                withSonarQubeEnv('sonqube') {
+                withSonarQubeEnv("${SONARQUBE_ENV}") {
                     sh '''
-                        echo "Checking scanner..."
-                        which sonar-scanner || echo "NOT FOUND"
-
+                        echo "Running SonarQube scanner..."
                         sonar-scanner \
                           -Dsonar.projectKey=debug-project \
                           -Dsonar.sources=. \
-                          -X
+                          -Dsonar.host.url=$SONAR_HOST_URL \
+                          -Dsonar.login=$SONAR_AUTH_TOKEN
                     '''
                 }
+
+                echo 'SonarQube analysis triggered'
             }
         }
 
@@ -47,6 +65,8 @@ pipeline {
                 timeout(time: 2, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: false
                 }
+
+                echo 'Quality Gate check completed'
             }
         }
     }
@@ -54,6 +74,14 @@ pipeline {
     post {
         always {
             echo '=== PIPELINE FINISHED ==='
+        }
+
+        success {
+            echo '=== STATUS: SUCCESS ✅ ==='
+        }
+
+        failure {
+            echo '=== STATUS: FAILURE ❌ ==='
         }
     }
 }
