@@ -20,9 +20,9 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/hamasfaa/demo-jenkins',
-                    credentialsId: 'jenkinsUser'
+                git branch: 'tugas-1',
+                    url: 'https://github.com/azaregon/OPREC-CAMIN-NCC',
+                    credentialsId: 'admin'
             }
         }
 
