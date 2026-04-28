@@ -2,8 +2,7 @@ pipeline {
     agent any
 
     tools {
-        // MUST match exactly what you named in Jenkins
-        sonarScanner 'sonqube'
+        sonarRunner 'sonqube'
     }
 
     stages {
@@ -23,30 +22,15 @@ pipeline {
             }
         }
 
-        stage('Build (Mock)') {
-            steps {
-                echo '=== STAGE: BUILD ==='
-                echo 'Skipping build...'
-            }
-        }
-
-        stage('Test (Mock)') {
-            steps {
-                echo '=== STAGE: TEST ==='
-                echo 'Skipping test...'
-            }
-        }
-
         stage('SonarQube Analysis') {
             steps {
                 echo '=== STAGE: SONARQUBE ANALYSIS ==='
 
                 withSonarQubeEnv('sonqube') {
                     sh '''
-                        echo "Using scanner:"
-                        which sonar-scanner
+                        echo "Checking scanner..."
+                        which sonar-scanner || echo "NOT FOUND"
 
-                        echo "Starting scan..."
                         sonar-scanner \
                           -Dsonar.projectKey=debug-project \
                           -Dsonar.sources=. \
@@ -70,14 +54,6 @@ pipeline {
     post {
         always {
             echo '=== PIPELINE FINISHED ==='
-        }
-
-        success {
-            echo '=== STATUS: SUCCESS ✅ ==='
-        }
-
-        failure {
-            echo '=== STATUS: FAILURE ❌ ==='
         }
     }
 }
