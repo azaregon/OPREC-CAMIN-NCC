@@ -1,6 +1,5 @@
 pipeline {
-    agent {
-    }
+    agent any // Or 'agent { label "docker" }' if you have specific agents
 
     environment {
         SONARQUBE_ENV = 'sonarserver'
@@ -18,25 +17,24 @@ pipeline {
             }
         }
 
-        stage('Setup') {
+        stage('Setup & Build') {
             steps {
-                sh '''
-                    git config --global --add safe.directory ${WORKSPACE}
-                    apt-get update -qq
-                    apt-get install -y -qq default-jre-headless
-                    cd 'file prod'
-                '''
-            }
-        }
-
-        stage('Build') {
-            steps {
-                sh 'docker compose up'
+                // Use dir() to ensure all commands inside happen within that folder
+                dir('file prod') {
+                    sh '''
+                        git config --global --add safe.directory ${WORKSPACE}
+                        apt-get update -qq && apt-get install -y -qq default-jre-headless
+                        
+                        # Use -d to run in background so the pipeline can continue
+                        docker compose up -d
+                    '''
+                }
             }
         }
 
         stage('Test') {
             steps {
+                // If you are running tests OUTSIDE the container, you need Go installed on the agent
                 sh 'go test ./... -v -coverprofile=coverage.out'
             }
         }
@@ -57,7 +55,7 @@ pipeline {
 
         stage('Quality Gate') {
             steps {
-                timeout(time: 20, unit: 'MINUTES') {
+                timeout(time: 5, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
             }
@@ -65,11 +63,13 @@ pipeline {
     }
 
     post {
-        success {
-            echo 'Pipeline sukses'
+        always {
+            // Shut down the containers so they don't leak resources
+            dir('file prod') {
+                sh 'docker compose down'
+            }
         }
-        failure {
-            echo 'Pipeline gagal'
-        }
+        success { echo 'Pipeline sukses' }
+        failure { echo 'Pipeline gagal' }
     }
 }
