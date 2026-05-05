@@ -43,14 +43,13 @@ pipeline {
             steps {
                 echo '=== STAGE: SONARQUBE ANALYSIS ==='
 
-                withSonarQubeEnv("${SONARQUBE_ENV}") {
+                steps {
                     sh '''
-                        echo "Running SonarQube scanner..."
-                        sonar-scanner \
-                          -Dsonar.projectKey=debug-project \
-                          -Dsonar.sources=. \
-                          -Dsonar.host.url=$SONAR_HOST_URL \
-                          -Dsonar.login=$SONAR_AUTH_TOKEN
+                    sonar-scanner \
+                      -Dsonar.projectKey=debug-project \
+                      -Dsonar.sources=. \
+                      -Dsonar.host.url=http://localhost:9000 \
+                      -Dsonar.login=YOUR_TOKEN
                     '''
                 }
 
