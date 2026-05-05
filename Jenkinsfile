@@ -45,18 +45,9 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                echo '=== STAGE: SONARQUBE ANALYSIS ==='
-
-                withSonarQubeEnv("${SONARQUBE_ENV}") {
-                    sh '''
-                    sonar-scanner \
-                      -Dsonar.projectKey=debug-project \
-                      -Dsonar.sources=. \
-                      -Dsonar.host.url=http://localhost:9000
-                    '''
+                withSonarQubeEnv('SonarQube') {
+                    sh 'sonar-scanner'
                 }
-
-                echo 'SonarQube analysis triggered'
             }
         }
 
