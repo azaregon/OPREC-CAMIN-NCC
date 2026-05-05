@@ -7,8 +7,7 @@ pipeline {
     }
 
     tools {
-        // Must match your SonarScanner tool name
-        sonarScanner 'sonqube'
+        sonarRunner 'sonqube'
     }
 
     stages {
