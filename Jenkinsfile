@@ -2,8 +2,13 @@ pipeline {
     agent any
 
     environment {
-        // Change this to your SonarQube server name in Jenkins
+        // Must match your SonarQube server name in Jenkins
         SONARQUBE_ENV = 'SonarQube'
+    }
+
+    tools {
+        // Must match your SonarScanner tool name
+        sonarScanner 'sonqube'
     }
 
     stages {
@@ -43,13 +48,12 @@ pipeline {
             steps {
                 echo '=== STAGE: SONARQUBE ANALYSIS ==='
 
-                steps {
+                withSonarQubeEnv("${SONARQUBE_ENV}") {
                     sh '''
                     sonar-scanner \
                       -Dsonar.projectKey=debug-project \
                       -Dsonar.sources=. \
-                      -Dsonar.host.url=http://localhost:9000 \
-                      -Dsonar.login=YOUR_TOKEN
+                      -Dsonar.host.url=http://localhost:9000
                     '''
                 }
 
